@@ -142,11 +142,11 @@ class JetFormBuilder_MarkupMarkdown_Integration {
         // Enable MarkupMarkdown on frontend for JetFormBuilder forms
         add_filter('mmd_frontend_enabled', array($this, 'enable_frontend_markdown'));
         
+        // Temporarily disable MarkupMarkdown's global filters for JetFormBuilder
+        add_action('wp_enqueue_scripts', array($this, 'disable_mmd_global_filters'), 1);
+        
         // Replace JetFormBuilder WYSIWYG field configuration
         add_filter('jet-form-builder/fields/wysiwyg-field/config', array($this, 'modify_wysiwyg_config'));
-        
-        // Override MarkupMarkdown's wp_editor_settings filter for JetFormBuilder
-        add_filter('wp_editor_settings', array($this, 'override_mmd_wp_editor_settings'), 5, 2);
         
         // Enqueue assets
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
@@ -191,53 +191,26 @@ class JetFormBuilder_MarkupMarkdown_Integration {
     }
     
     /**
-     * Modify JetFormBuilder WYSIWYG field configuration
+     * Override MarkupMarkdown's global wp_editor_settings filter
      */
-    public function modify_wysiwyg_config($config) {
-        // Get plugin settings
-        $replace_wysiwyg = get_option('jfb_mmd_replace_wysiwyg', true);
-        
-        if (!$replace_wysiwyg) {
-            return $config;
+    public function disable_mmd_global_filters() {
+        if (!$this->should_load_frontend_assets()) {
+            return;
         }
+        
+        // Override MarkupMarkdown's wp_editor_settings filter with higher priority
+        add_filter('wp_editor_settings', array($this, 'override_all_wp_editor_settings'), 5, 2);
         
         // Debug logging
         if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
-            error_log('JFB MMD: Modifying WYSIWYG config');
+            error_log('JFB MMD: Added override for all wp_editor_settings');
         }
-        
-        // For now, let's just disable our modifications to test
-        // TODO: Re-enable after debugging
-        return $config;
-        
-        // Convert WYSIWYG to textarea for markdown support
-        // Use minimal TinyMCE config to ensure textarea is rendered
-        $config['tinymce'] = array(
-            'toolbar1' => '',
-            'toolbar2' => '',
-            'toolbar3' => '',
-            'toolbar4' => '',
-            'plugins' => '',
-            'menubar' => false,
-            'statusbar' => false,
-            'resize' => false
-        );
-        $config['quicktags'] = false;
-        $config['media_buttons'] = false;
-        $config['textarea_rows'] = isset($config['textarea_rows']) ? $config['textarea_rows'] : 15;
-        
-        // Debug logging
-        if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
-            error_log('JFB MMD: Modified WYSIWYG config');
-        }
-        
-        return $config;
     }
     
     /**
-     * Override MarkupMarkdown's wp_editor_settings filter for JetFormBuilder
+     * Override all wp_editor_settings to restore TinyMCE for JetFormBuilder
      */
-    public function override_mmd_wp_editor_settings($settings, $editor_id) {
+    public function override_all_wp_editor_settings($settings, $editor_id) {
         // Only apply to JetFormBuilder WYSIWYG fields
         if (strpos($editor_id, 'wp_editor_') === 0) {
             // Get plugin settings
@@ -246,11 +219,10 @@ class JetFormBuilder_MarkupMarkdown_Integration {
             if ($replace_wysiwyg) {
                 // Debug logging
                 if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
-                    error_log('JFB MMD: Overriding wp_editor_settings for ' . $editor_id);
+                    error_log('JFB MMD: Overriding ALL wp_editor_settings for ' . $editor_id);
                 }
                 
                 // Restore TinyMCE for JetFormBuilder fields
-                // This overrides MarkupMarkdown's global disable
                 $settings['tinymce'] = array(
                     'toolbar1' => 'formatselect,|,bold,italic,strikethrough,blockquote,|,bullist,numlist,|,alignleft,aligncenter,alignright,|,link,unlink,|,undo,redo',
                     'toolbar2' => '',
@@ -278,6 +250,34 @@ class JetFormBuilder_MarkupMarkdown_Integration {
         }
         
         return $settings;
+    }
+    
+    /**
+     * Modify JetFormBuilder WYSIWYG field configuration
+     */
+    public function modify_wysiwyg_config($config) {
+        // Get plugin settings
+        $replace_wysiwyg = get_option('jfb_mmd_replace_wysiwyg', true);
+        
+        if (!$replace_wysiwyg) {
+            return $config;
+        }
+        
+        // Debug logging
+        if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
+            error_log('JFB MMD: Modifying WYSIWYG config');
+        }
+        
+        // Let the global wp_editor_settings filter handle TinyMCE restoration
+        // Just ensure we have the right textarea rows
+        $config['textarea_rows'] = isset($config['textarea_rows']) ? $config['textarea_rows'] : 15;
+        
+        // Debug logging
+        if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
+            error_log('JFB MMD: Modified WYSIWYG config');
+        }
+        
+        return $config;
     }
     
     /**
