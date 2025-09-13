@@ -238,10 +238,6 @@ class JetFormBuilder_MarkupMarkdown_Integration {
      * Override MarkupMarkdown's wp_editor_settings filter for JetFormBuilder
      */
     public function override_mmd_wp_editor_settings($settings, $editor_id) {
-        // For now, let's disable this to test
-        // TODO: Re-enable after debugging
-        return $settings;
-        
         // Only apply to JetFormBuilder WYSIWYG fields
         if (strpos($editor_id, 'wp_editor_') === 0) {
             // Get plugin settings
@@ -253,23 +249,30 @@ class JetFormBuilder_MarkupMarkdown_Integration {
                     error_log('JFB MMD: Overriding wp_editor_settings for ' . $editor_id);
                 }
                 
-                // Ensure textarea is rendered by keeping minimal TinyMCE config
+                // Restore TinyMCE for JetFormBuilder fields
+                // This overrides MarkupMarkdown's global disable
                 $settings['tinymce'] = array(
-                    'toolbar1' => '',
+                    'toolbar1' => 'formatselect,|,bold,italic,strikethrough,blockquote,|,bullist,numlist,|,alignleft,aligncenter,alignright,|,link,unlink,|,undo,redo',
                     'toolbar2' => '',
                     'toolbar3' => '',
                     'toolbar4' => '',
-                    'plugins' => '',
+                    'plugins' => 'lists,paste,tabfocus,wplink,wordpress',
                     'menubar' => false,
-                    'statusbar' => false,
-                    'resize' => false
+                    'statusbar' => true,
+                    'resize' => true,
+                    'paste_as_text' => true,
+                    'paste_auto_cleanup_on_paste' => true,
+                    'paste_remove_spans' => true,
+                    'paste_remove_styles' => true,
+                    'paste_remove_styles_if_webkit' => true,
+                    'paste_strip_class_attributes' => true
                 );
                 $settings['quicktags'] = false;
                 $settings['media_buttons'] = false;
                 
                 // Debug logging
                 if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
-                    error_log('JFB MMD: Modified wp_editor_settings');
+                    error_log('JFB MMD: Restored TinyMCE for JetFormBuilder field');
                 }
             }
         }
@@ -413,21 +416,27 @@ class JetFormBuilder_MarkupMarkdown_Integration {
     private function get_initialization_script() {
         return "
         jQuery(document).ready(function($) {
-            // Initialize MarkupMarkdown on JetFormBuilder textarea fields
+            // Initialize MarkupMarkdown on JetFormBuilder WYSIWYG fields
             function initMarkupMarkdown() {
                 console.log('Attempting to initialize MarkupMarkdown...');
                 console.log('MarkupMarkdown available:', typeof window.MarkupMarkdown !== 'undefined');
                 console.log('WYSIWYG fields found:', $('.jet-form-builder__field.wysiwyg-field').length);
                 
-                // Target WYSIWYG fields that were converted to textarea
+                // Target WYSIWYG fields and replace TinyMCE with MarkupMarkdown
                 $('.jet-form-builder__field.wysiwyg-field').each(function() {
                     var \$field = $(this);
                     var \$textarea = \$field.find('textarea');
+                    var \$tinymceContainer = \$field.find('.mce-tinymce');
                     
                     console.log('Processing field:', \$textarea.attr('name'), 'Initialized:', \$field.hasClass('markdown-initialized'));
+                    console.log('TinyMCE container found:', \$tinymceContainer.length);
                     
                     if (\$textarea.length && !\$field.hasClass('markdown-initialized')) {
                         \$field.addClass('markdown-initialized');
+                        
+                        // Hide TinyMCE and show textarea for MarkupMarkdown
+                        \$tinymceContainer.hide();
+                        \$textarea.show();
                         
                         // Initialize MarkupMarkdown
                         if (typeof window.MarkupMarkdown !== 'undefined') {
