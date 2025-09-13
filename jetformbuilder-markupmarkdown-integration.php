@@ -203,8 +203,12 @@ class JetFormBuilder_MarkupMarkdown_Integration {
         
         // Debug logging
         if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
-            error_log('JFB MMD: Modifying WYSIWYG config. Original: ' . print_r($config, true));
+            error_log('JFB MMD: Modifying WYSIWYG config');
         }
+        
+        // For now, let's just disable our modifications to test
+        // TODO: Re-enable after debugging
+        return $config;
         
         // Convert WYSIWYG to textarea for markdown support
         // Use minimal TinyMCE config to ensure textarea is rendered
@@ -216,8 +220,7 @@ class JetFormBuilder_MarkupMarkdown_Integration {
             'plugins' => '',
             'menubar' => false,
             'statusbar' => false,
-            'resize' => false,
-            'setup' => 'function(ed) { ed.hide(); }'
+            'resize' => false
         );
         $config['quicktags'] = false;
         $config['media_buttons'] = false;
@@ -225,7 +228,7 @@ class JetFormBuilder_MarkupMarkdown_Integration {
         
         // Debug logging
         if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
-            error_log('JFB MMD: Modified WYSIWYG config: ' . print_r($config, true));
+            error_log('JFB MMD: Modified WYSIWYG config');
         }
         
         return $config;
@@ -235,6 +238,10 @@ class JetFormBuilder_MarkupMarkdown_Integration {
      * Override MarkupMarkdown's wp_editor_settings filter for JetFormBuilder
      */
     public function override_mmd_wp_editor_settings($settings, $editor_id) {
+        // For now, let's disable this to test
+        // TODO: Re-enable after debugging
+        return $settings;
+        
         // Only apply to JetFormBuilder WYSIWYG fields
         if (strpos($editor_id, 'wp_editor_') === 0) {
             // Get plugin settings
@@ -255,15 +262,14 @@ class JetFormBuilder_MarkupMarkdown_Integration {
                     'plugins' => '',
                     'menubar' => false,
                     'statusbar' => false,
-                    'resize' => false,
-                    'setup' => 'function(ed) { ed.hide(); }'
+                    'resize' => false
                 );
                 $settings['quicktags'] = false;
                 $settings['media_buttons'] = false;
                 
                 // Debug logging
                 if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
-                    error_log('JFB MMD: Modified wp_editor_settings: ' . print_r($settings, true));
+                    error_log('JFB MMD: Modified wp_editor_settings');
                 }
             }
         }
