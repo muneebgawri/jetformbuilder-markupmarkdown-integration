@@ -145,6 +145,9 @@ class JetFormBuilder_MarkupMarkdown_Integration {
         // Replace JetFormBuilder WYSIWYG field configuration
         add_filter('jet-form-builder/fields/wysiwyg-field/config', array($this, 'modify_wysiwyg_config'));
         
+        // Override MarkupMarkdown's wp_editor_settings filter for JetFormBuilder
+        add_filter('wp_editor_settings', array($this, 'override_mmd_wp_editor_settings'), 5, 2);
+        
         // Enqueue assets
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
@@ -226,6 +229,46 @@ class JetFormBuilder_MarkupMarkdown_Integration {
         }
         
         return $config;
+    }
+    
+    /**
+     * Override MarkupMarkdown's wp_editor_settings filter for JetFormBuilder
+     */
+    public function override_mmd_wp_editor_settings($settings, $editor_id) {
+        // Only apply to JetFormBuilder WYSIWYG fields
+        if (strpos($editor_id, 'wp_editor_') === 0) {
+            // Get plugin settings
+            $replace_wysiwyg = get_option('jfb_mmd_replace_wysiwyg', true);
+            
+            if ($replace_wysiwyg) {
+                // Debug logging
+                if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
+                    error_log('JFB MMD: Overriding wp_editor_settings for ' . $editor_id);
+                }
+                
+                // Ensure textarea is rendered by keeping minimal TinyMCE config
+                $settings['tinymce'] = array(
+                    'toolbar1' => '',
+                    'toolbar2' => '',
+                    'toolbar3' => '',
+                    'toolbar4' => '',
+                    'plugins' => '',
+                    'menubar' => false,
+                    'statusbar' => false,
+                    'resize' => false,
+                    'setup' => 'function(ed) { ed.hide(); }'
+                );
+                $settings['quicktags'] = false;
+                $settings['media_buttons'] = false;
+                
+                // Debug logging
+                if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
+                    error_log('JFB MMD: Modified wp_editor_settings: ' . print_r($settings, true));
+                }
+            }
+        }
+        
+        return $settings;
     }
     
     /**
