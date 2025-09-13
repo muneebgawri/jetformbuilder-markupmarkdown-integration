@@ -7,7 +7,7 @@ jQuery(document).ready(function($) {
     
     // Initialize MarkupMarkdown on JetFormBuilder fields
     function initMarkupMarkdown() {
-        // Initialize WYSIWYG fields converted to markdown
+        // Target WYSIWYG fields that were converted to textarea
         $('.jet-form-builder__field.wysiwyg-field').each(function() {
             var $field = $(this);
             var $textarea = $field.find('textarea');
@@ -19,9 +19,12 @@ jQuery(document).ready(function($) {
                 if (typeof window.MarkupMarkdown !== 'undefined') {
                     try {
                         new window.MarkupMarkdown($textarea[0]);
+                        console.log('MarkupMarkdown initialized on field:', $textarea.attr('name'));
                     } catch (error) {
                         console.warn('Failed to initialize MarkupMarkdown:', error);
                     }
+                } else {
+                    console.warn('MarkupMarkdown not available');
                 }
             }
         });
@@ -38,6 +41,7 @@ jQuery(document).ready(function($) {
                 if (typeof window.MarkupMarkdown !== 'undefined') {
                     try {
                         new window.MarkupMarkdown($textarea[0]);
+                        console.log('MarkupMarkdown initialized on custom field:', $textarea.attr('name'));
                     } catch (error) {
                         console.warn('Failed to initialize MarkupMarkdown:', error);
                     }
@@ -47,7 +51,7 @@ jQuery(document).ready(function($) {
     }
     
     // Initialize on page load
-    initMarkupMarkdown();
+    setTimeout(initMarkupMarkdown, 500);
     
     // Re-initialize when forms are dynamically loaded
     $(document).on('jet-form-builder/conditional-block/block-toggle-hidden-dom', function(e) {

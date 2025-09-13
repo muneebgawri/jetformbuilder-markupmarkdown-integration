@@ -238,8 +238,41 @@ class JetFormBuilder_MarkupMarkdown_Integration {
                 '3.20.10'
             );
             
+            // Also enqueue EasyMDE assets
+            wp_enqueue_style(
+                'easymde-css',
+                $mmd_plugin_url . 'assets/easy-markdown-editor/dist/easymde.min.css',
+                array(),
+                '2.19.1011'
+            );
+            
             // Add initialization script
             wp_add_inline_script('markup-markdown-builder', $this->get_initialization_script());
+            
+            // Add debug info
+            if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
+                wp_add_inline_script('markup-markdown-builder', '
+                    console.log("JetFormBuilder MarkupMarkdown Integration Debug Mode");
+                    console.log("MarkupMarkdown URL:", "' . $mmd_plugin_url . '");
+                    console.log("Builder script loaded:", typeof window.MarkupMarkdown !== "undefined");
+                ');
+            }
+        } else {
+            // Fallback: try to load from our plugin directory
+            wp_enqueue_script(
+                'jfb-mmd-frontend',
+                JFB_MMD_INTEGRATION_URL . 'assets/js/frontend.js',
+                array('jquery'),
+                $this->version,
+                true
+            );
+            
+            wp_enqueue_style(
+                'jfb-mmd-frontend',
+                JFB_MMD_INTEGRATION_URL . 'assets/css/frontend.css',
+                array(),
+                $this->version
+            );
         }
     }
     
@@ -310,18 +343,45 @@ class JetFormBuilder_MarkupMarkdown_Integration {
     private function get_initialization_script() {
         return "
         jQuery(document).ready(function($) {
-            // Initialize MarkupMarkdown on JetFormBuilder WYSIWYG fields
+            // Initialize MarkupMarkdown on JetFormBuilder textarea fields
             function initMarkupMarkdown() {
+                console.log('Attempting to initialize MarkupMarkdown...');
+                console.log('MarkupMarkdown available:', typeof window.MarkupMarkdown !== 'undefined');
+                console.log('WYSIWYG fields found:', $('.jet-form-builder__field.wysiwyg-field').length);
+                
+                // Target WYSIWYG fields that were converted to textarea
                 $('.jet-form-builder__field.wysiwyg-field').each(function() {
                     var \$field = $(this);
                     var \$textarea = \$field.find('textarea');
+                    
+                    console.log('Processing field:', \$textarea.attr('name'), 'Initialized:', \$field.hasClass('markdown-initialized'));
                     
                     if (\$textarea.length && !\$field.hasClass('markdown-initialized')) {
                         \$field.addClass('markdown-initialized');
                         
                         // Initialize MarkupMarkdown
                         if (typeof window.MarkupMarkdown !== 'undefined') {
-                            new window.MarkupMarkdown(\$textarea[0]);
+                            try {
+                                var editor = new window.MarkupMarkdown(\$textarea[0]);
+                                console.log('MarkupMarkdown initialized on field:', \$textarea.attr('name'), editor);
+                            } catch (error) {
+                                console.warn('Failed to initialize MarkupMarkdown:', error);
+                            }
+                        } else {
+                            console.warn('MarkupMarkdown not available - trying alternative approach');
+                            // Try to initialize EasyMDE directly if available
+                            if (typeof window.EasyMDE !== 'undefined') {
+                                try {
+                                    var easyMDE = new window.EasyMDE({
+                                        element: \$textarea[0],
+                                        spellChecker: false,
+                                        toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', '|', 'preview', 'side-by-side', 'fullscreen']
+                                    });
+                                    console.log('EasyMDE initialized on field:', \$textarea.attr('name'));
+                                } catch (error) {
+                                    console.warn('Failed to initialize EasyMDE:', error);
+                                }
+                            }
                         }
                     }
                 });
@@ -336,14 +396,29 @@ class JetFormBuilder_MarkupMarkdown_Integration {
                         
                         // Initialize MarkupMarkdown
                         if (typeof window.MarkupMarkdown !== 'undefined') {
-                            new window.MarkupMarkdown(\$textarea[0]);
+                            try {
+                                var editor = new window.MarkupMarkdown(\$textarea[0]);
+                                console.log('MarkupMarkdown initialized on custom field:', \$textarea.attr('name'), editor);
+                            } catch (error) {
+                                console.warn('Failed to initialize MarkupMarkdown:', error);
+                            }
                         }
                     }
                 });
             }
             
-            // Initialize on page load
-            initMarkupMarkdown();
+            // Wait for MarkupMarkdown to load
+            function waitForMarkupMarkdown() {
+                if (typeof window.MarkupMarkdown !== 'undefined') {
+                    initMarkupMarkdown();
+                } else {
+                    console.log('Waiting for MarkupMarkdown to load...');
+                    setTimeout(waitForMarkupMarkdown, 100);
+                }
+            }
+            
+            // Start initialization
+            setTimeout(waitForMarkupMarkdown, 500);
             
             // Re-initialize when forms are dynamically loaded
             $(document).on('jet-form-builder/conditional-block/block-toggle-hidden-dom', function(e) {
@@ -359,6 +434,16 @@ class JetFormBuilder_MarkupMarkdown_Integration {
             $(document).on('jet-form-builder/repeater/add-item', function() {
                 setTimeout(initMarkupMarkdown, 100);
             });
+            
+            // Debug mode
+            if (window.location.search.indexOf('jfb_mmd_debug=1') !== -1) {
+                console.log('JetFormBuilder MarkupMarkdown Integration Debug Mode');
+                console.log('jQuery version:', $.fn.jquery);
+                console.log('MarkupMarkdown available:', typeof window.MarkupMarkdown !== 'undefined');
+                console.log('EasyMDE available:', typeof window.EasyMDE !== 'undefined');
+                console.log('WYSIWYG fields found:', $('.jet-form-builder__field.wysiwyg-field').length);
+                console.log('All textarea elements:', $('textarea').length);
+            }
         });
         ";
     }
