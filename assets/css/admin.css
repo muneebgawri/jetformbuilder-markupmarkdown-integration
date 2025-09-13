@@ -1,0 +1,96 @@
+/* JetFormBuilder MarkupMarkdown Integration - Admin Styles */
+
+.jfb-mmd-admin-content {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.jfb-mmd-main-content {
+    flex: 1;
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+}
+
+.jfb-mmd-sidebar {
+    width: 300px;
+}
+
+.jfb-mmd-widget {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.jfb-mmd-widget h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.jfb-mmd-widget p {
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.jfb-mmd-widget ul,
+.jfb-mmd-widget ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.jfb-mmd-widget li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.jfb-mmd-widget a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.jfb-mmd-widget a:hover {
+    color: #005177;
+    text-decoration: underline;
+}
+
+.form-table th {
+    width: 200px;
+    padding: 20px 10px 20px 0;
+}
+
+.form-table td {
+    padding: 15px 10px;
+}
+
+.form-table fieldset {
+    margin: 0;
+}
+
+.form-table fieldset label {
+    font-weight: normal;
+}
+
+.form-table .description {
+    margin-top: 5px;
+    font-style: italic;
+    color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .jfb-mmd-admin-content {
+        flex-direction: column;
+    }
+    
+    .jfb-mmd-sidebar {
+        width: 100%;
+    }
+}
