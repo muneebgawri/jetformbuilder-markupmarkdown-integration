@@ -148,6 +148,9 @@ class JetFormBuilder_MarkupMarkdown_Integration {
         // Replace JetFormBuilder WYSIWYG field configuration
         add_filter('jet-form-builder/fields/wysiwyg-field/config', array($this, 'modify_wysiwyg_config'));
         
+        // Add custom markdown field type
+        add_filter('jet-form-builder/blocks/items', array($this, 'add_markdown_field_type'));
+        
         // Enqueue assets
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
