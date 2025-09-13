@@ -3,7 +3,7 @@
  * Plugin Name: JetFormBuilder MarkupMarkdown Integration
  * Plugin URI: https://github.com/muneebgawri/jetformbuilder-markupmarkdown-integration
  * Description: Replaces JetFormBuilder WYSIWYG fields with MarkupMarkdown editor for enhanced markdown editing experience.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Muneeb Gawri
  * Author URI: https://muneebgawri.com
  * Text Domain: jetformbuilder-markupmarkdown-integration
@@ -198,11 +198,32 @@ class JetFormBuilder_MarkupMarkdown_Integration {
             return $config;
         }
         
+        // Debug logging
+        if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
+            error_log('JFB MMD: Modifying WYSIWYG config. Original: ' . print_r($config, true));
+        }
+        
         // Convert WYSIWYG to textarea for markdown support
-        $config['tinymce'] = false;
+        // Use minimal TinyMCE config to ensure textarea is rendered
+        $config['tinymce'] = array(
+            'toolbar1' => '',
+            'toolbar2' => '',
+            'toolbar3' => '',
+            'toolbar4' => '',
+            'plugins' => '',
+            'menubar' => false,
+            'statusbar' => false,
+            'resize' => false,
+            'setup' => 'function(ed) { ed.hide(); }'
+        );
         $config['quicktags'] = false;
         $config['media_buttons'] = false;
-        $config['textarea_rows'] = 15;
+        $config['textarea_rows'] = isset($config['textarea_rows']) ? $config['textarea_rows'] : 15;
+        
+        // Debug logging
+        if (isset($_GET['jfb_mmd_debug']) && $_GET['jfb_mmd_debug'] == '1') {
+            error_log('JFB MMD: Modified WYSIWYG config: ' . print_r($config, true));
+        }
         
         return $config;
     }
